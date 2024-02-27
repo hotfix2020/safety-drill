@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+  <meta charset="UTF-8">
+  <title>存储型XSS攻击</title>
+</head>
+
+<body>
+  <h1>存储型XSS攻击例子</h1>
+  <h2>留言板</h2>
+  <form id="messageForm">
+    <input type="text" id="messageInput" placeholder="留言内容" required>
+    <button type="submit">提交留言</button>
+  </form>
+  <ul id="messagesList"></ul>
+
+  <script src="./stored.js"></script>
+</body>
+
+</html>

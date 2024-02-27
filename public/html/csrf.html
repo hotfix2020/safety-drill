@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+  <meta charset="UTF-8">
+  <title>CSRF Attack</title>
+</head>
+
+<body>
+  <h1>You've won a prize! Click the button to claim!</h1>
+  <form action="/csrf/action" method="POST" id="fakeForm">
+    <button type="submit">Claim Your Prize!</button>
+  </form>
+  <script src="./csrf.js"></script>
+</body>
+
+</html>
