@@ -1,5 +1,6 @@
 const express = require('express')
 const cookieParser = require('cookie-parser')
+const helmet = require('helmet')
 
 const app = express()
 
@@ -8,23 +9,28 @@ const args = process.argv.slice(2) // 去掉前两个默认参数
 
 const PORT = args[0] || 3000 // 如果命令行中提供了端口，使用该端口，否则默认为3000
 const HOST = args[1] || 'localhost' // 如果命令行中提供了主机，使用该主机，否则默认为localhost
-const IS_CSP = args[2] || '' // 默认打开csp配置
+const IS_SECURITY = args[2] || '' // 默认打开安全配置
 
-// 设置CSP以及其他安全相关的HTTP头部
-const helmet = require('helmet')
+// 使用helmet提升安全性
+app.use(helmet())
 
-if (IS_CSP === 'openCSP') {
+if (IS_SECURITY === 'openSecurity') {
+	// 设置X-Frame-Options为DENY 不允许页面被嵌入到任何iframe中， SAMEORIGIN，只允许同源的页面嵌入
+	app.use(helmet.frameguard({ action: 'deny' }))
+
+	// 设置Content-Security-Policy
 	app.use(
-		helmet({
-			contentSecurityPolicy: {
-				directives: {
-					defaultSrc: ["'self'"], // 默认限制所有资源只能从当前源加载
-					scriptSrc: ["'self'", 'https://example.com'], // 允许执行自身和指定example上的脚本
-					styleSrc: ["'self'", "'unsafe-inline'", 'https://example.com'], // 允许使用自身和指定example上的样式表
-					imgSrc: ["'self'", 'https://example.com'], // 允许加载自身和指定example上的图片
-					// 其他资源类型的策略...
-				},
+		helmet.contentSecurityPolicy({
+			directives: {
+				defaultSrc: ["'self'"], // 只允许执行同源的脚本
+				scriptSrc: ["'self'", 'https://example.com'], // 允许执行这些源的脚本
+				styleSrc: ["'self'", "'unsafe-inline'", 'https://example.com'], // 允许使用自身和指定example上的样式表
+				objectSrc: ["'none'"], // 不允许<object>, <embed>, 和<applet>元素加载任何资源
+				upgradeInsecureRequests: [], // 将不安全的请求（http）升级为安全的请求（https）
+				frameAncestors: ["'self'"], // 与X-Frame-Options的DENY相同，禁止页面被嵌入到任何iframe或frame中
 			},
+			// 设置报告URI，可用于收集违反CSP的报告
+			// reportUri: '/csp-violation-report-endpoint'
 		})
 	)
 }

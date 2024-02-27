@@ -178,134 +178,298 @@ http://example.com/?msg=<img src='invalid-image' onerror='alert(document.cookie)
 
 CSRF（Cross-Site Request Forgery，跨站请求伪造）攻击是一种常见的网络攻击方式。它允许恶意网站在用户不知情的情况下，以用户的名义向另一个网站发送请求。这种攻击利用了网站对用户的信任，尤其是当用户已经登录目标网站时，攻击者可以进行一些未经授权的操作，如更改密码、转账等。
 
-在前后端分离的架构中，CSRF攻击同样可能发生，尤其是当应用依赖于Cookie进行身份验证时。下面，我们将通过一个简单的例子来演示如何在一个前后端分离的场景下发起一个CSRF攻击。
-
-### 前提条件
-
-- **受害者网站**：一个前后端分离的应用，后端API接受转账请求。
-- **攻击者网站**：恶意创建的网站，用来发起CSRF攻击。
+为了构建一个简单的CSRF攻击示例，我们将设置两个项目：一个是受害者的服务器（假设是一个简单的社交应用），另一个是攻击者的网页。这个例子将展示如何从攻击者的网页发起对受害者网站的CSRF攻击。
 
 ### 第1步：设置受害者的后端（Node.js + Express）
 
 ```javascript
-const express = require('express');
-const bodyParser = require('body-parser');
-const cors = require('cors');
+// 设置一个简单的登录页面
+router.get('/csrf/login', (req, res) => {
+	res.send(`<form action="/csrf/login" method="post">
+              <input type="text" name="username" placeholder="账号" />
+              <input type="password" name="password" placeholder="密码" />
+              <button type="submit">登录</button>
+            </form>`)
+})
 
-const app = express();
-const port = 3000;
+// 登录接口，简化处理，实际开发需要安全验证
+router.post('/csrf/login', (req, res) => {
+	// 设置简单的登录Cookie
+	res.cookie('auth', 'dummy-token')
+	res.send('登录成功')
+})
 
-app.use(cors()); // 注意：在实际应用中，你会限制CORS策略
-app.use(bodyParser.json());
-
-app.post('/api/transfer', (req, res) => {
-    const { amount, toAccount } = req.body;
-    console.log(`转账金额：${amount}，接收账号：${toAccount}`);
-    res.json({ message: '转账成功' });
-});
-
-app.listen(port, () => {
-    console.log(`Server listening at http://localhost:${port}`);
-});
+// 受保护的操作
+router.post('/csrf/action', (req, res) => {
+	const token = req.cookies.auth
+	if (token === 'dummy-token') {
+		res.send('执行成功')
+	} else {
+		res.send('没有通过验证')
+	}
+})
 ```
 
-### 第2步：创建前端页面（受害者）
-
-这是受害者的前端页面，通常它会有一个表单让用户提交转账请求。
-
-```html
-<!-- victim.html -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>银行服务</title>
-</head>
-<body>
-    <h2>转账服务</h2>
-    <form id="transferForm">
-        <input type="number" id="amount" placeholder="金额" required />
-        <input type="text" id="toAccount" placeholder="接收账户" required />
-        <button type="submit">转账</button>
-    </form>
-    <script>
-        document.getElementById('transferForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const amount = document.getElementById('amount').value;
-            const toAccount = document.getElementById('toAccount').value;
-
-            fetch('http://localhost:3000/api/transfer', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ amount, toAccount }),
-            })
-            .then(response => response.json())
-            .then(data => alert(data.message))
-            .catch(error => console.error('Error:', error));
-        });
-    </script>
-</body>
-</html>
-```
-
-### 第3步：创建攻击者的网页
+### 第2步：创建攻击者的网页
 
 攻击者创建一个网页，这个网页包含一个自动提交的表单，目标是受害者网站的转账API。
 
 ```html
-<!-- attacker.html -->
-<!DOCTYPE html>
-<html lang="zh">
-<head>
-    <meta charset="UTF-8">
-    <title>恶意页面</title>
-</head>
 <body>
-    <h2>如果你看到这个页面，可能已经晚了...</h2>
-    <img src="http://localhost:3000/api/transfer" style="display:none" onerror="this.src='http://localhost:3000/api/transfer?amount=1000&toAccount=attacker'" />
+  <h1>你中奖了!点击按钮领取!</h1>
+  <form action="/csrf/action" method="POST" id="fakeForm">
+    <button type="submit">领取奖品！</button>
+  </form>
+  <script src="./csrf.js"></script>
 </body>
-</html>
+```
+
+```javascript
+// 自动提交表单
+document.getElementById('fakeForm').submit();
+```
+
+### 第3步：攻击示例
+```
+http://localhost:3000/csrf/login // 先登录
+http://localhost:3000/csrf/action // 访问
 ```
 
 ### 攻击原理
 
 1. **受害者登录自己的账户**：并在其他标签页中仍然保持登录状态。
-2. **受害者访问攻击者网站**：不知情的点击一个链接或被诱导访问了攻击者的网页。
+2. **受害者访问攻击者网站**：不知情的点击一个邮箱链接或被诱导访问了攻击者的网页。
 3. **攻击者网页自动提交请求**：利用受害者的登录态，向受害者网站的API发送请求。
+
+
+理解CSRF（跨站请求伪造）攻击的关键在于明白它并不依赖于跨域请求的成功，而是利用了Web浏览器对同源策略（SOP）的处理方式。这里的误解可能在于对跨域请求和浏览器如何处理不同源请求的认识。让我们澄清一下这些概念。
+
+### 同源策略（SOP）
+
+同源策略是Web安全的基石之一，它阻止了一个源的文档或脚本与另一个源的资源进行交互。这是为了防止恶意文档窃取来自另一个源的数据。在这个上下文中，“源”由协议、域名和端口三部分构成。只有当这三者都匹配时，两个URL才算是"同源"的。
+
+### 跨站请求的工作方式
+
+CSRF攻击并不直接违反同源策略。相反，攻击利用的是Web应用在用户浏览器中的行为，这些行为在用户未知情的情况下可以跨域发送请求。例如，如果用户已经登录了银行网站，他们的浏览器将保存登录凭证（如cookies）。如果在不登出银行网站的情况下，用户点击了一个恶意链接，这个链接可能会导致浏览器向银行网站发送一个请求，如转账操作。由于请求带有用户的凭证，银行网站可能会执行这个请求。
+
+### 为什么跨域问题不阻止CSRF攻击
+
+- **浏览器自动携带凭证**：当浏览器向一个网站发送请求时，它会自动附带该网站的cookies（如果有的话）。这意味着，如果用户已经登录了某个网站，即使是从另一个网站发起的请求，只要请求指向那个已登录的网站，浏览器也会携带用户的身份凭证（cookies）。
+- **限制在于响应**：同源策略主要限制从网站A向网站B发送请求后，网站A读取网站B的响应。在CSRF攻击中，攻击者通常不关心响应内容，他们只是想利用用户的浏览器向网站B发起请求。
 
 ### 防御措施
 
-- **不完全依赖于Cookie进行身份验证**：使用如Token（例如JWT）的方式，并要求在HTTP头中发送。
-- **检查`Content-Type`**：确保后端API只接受`application/json`类型的内容，因为简单的图片请求或者通过`<img>`标签发起的GET请求无法修改`Content-Type`。
-- **使用CSRF Token**：尽管是前后端分离的应用，也可以在每次请求时携带一个从后端获取的CSRF Token，确保请求是经过授权的。
+防御CSRF攻击的策略通常包括：
+- **使用CSRF Token**：向用户的会话中添加一个唯一的、不可预测的值（CSRF Token），并要求所有的状态改变请求（如POST请求）都必须携带这个值。由于攻击者无法知道这个Token，他们无法构造一个有效的请求。
+- **验证Referer头**：服务器可以检查HTTP请求的Referer头，以确保请求是从受信任的来源发出的。
+- **利用SameSite Cookie属性**：这个属性可以限制第三方网站使用用户的cookie，根据属性值（Strict、Lax、None），可以阻止一些或所有跨站请求携带cookie。
 
 ## 点击劫持
 
-### 问题定义
+点击劫持（Clickjacking）是一种视觉上的欺骗手段，攻击者通过在一个透明的iframe上覆盖一个看似无害的元素，诱使用户点击该元素，从而在不知情的情况下执行了攻击者想要用户执行的操作。这种攻击方式可以用于盗取用户信息、控制用户的网络会话，或者在用户不知情的情况下操控用户的账号。
 
-点击劫持是一种视觉欺骗的手段，攻击者通过一个透明的iframe或其他方法，覆盖在网页上的按钮或链接上，诱导用户点击不可见的元素。
+### 点击劫持案例
 
-### 演示
+以下是一个简单的点击劫持案例。
 
-我们将通过一个看似无害的按钮来演示点击劫持攻击。用户认为他们只是在点击一个普通的按钮，但实际上，他们点击的是被攻击者控制的链接。
+#### Node.js服务器设置
 
-### 防御措施
+首先，我们需要设置一个简单的Node.js服务器，这里使用`express`框架：
 
-- 设置X-Frame-Options响应头，防止页面被嵌入iframe中。
-- 使用内容安全策略（CSP）的frame-ancestors指令来限制哪些网站可以嵌入当前页面。
+```javascript
+// 引入express
+const express = require('express');
+const app = express();
+const path = require('path');
 
-## 实践建议
+// 静态文件服务
+app.use(express.static('public'));
 
-在开发过程中，安全应该是一个始终贯穿的考虑因素。除了上述的具体防御措施外，我还推荐以下最佳实践：
+// 主页路由
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
 
-- 始终保持对使用的第三方库和框架的更新和安全性的关注。
-- 开发团队应该定期进行安全培训，提高安全意识。
-- 实施定期
+// 监听3000端口
+app.listen(3000, () => {
+  console.log('Server running on port 3000');
+});
+```
 
-的安全审计和代码审查，确保没有安全漏洞被忽视。
+在`public`目录下，我们可以创建一个`index.html`文件和一个攻击者的页面`attack.html`。
+
+#### 真实页面（[index.html](./html/clickjacking/index.html)）
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+  <meta charset="UTF-8">
+  <title>安全页面</title>
+  <style>
+    body {
+      margin: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <button id="safeButton">安全按钮</button>
+  <script>
+    document.getElementById('safeButton').onclick = function () {
+      alert('您点击了安全按钮！');
+    };
+  </script>
+</body>
+
+</html>
+```
+
+#### 攻击页面（[attack.html](./html/clickjacking/attack.html)）
+
+```html
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+  <meta charset="UTF-8">
+  <title>攻击页面</title>
+  <style>
+    .box {
+      position: relative;
+    }
+    iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      opacity: 0.0001;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>点击下面的“奖励”按钮领取奖励</h1>
+  <div class="box">
+    <button>奖励</button>
+    <iframe src="index.html" width="200" height="200"></iframe>
+  </div>
+</body>
+
+</html>
+```
+
+#### 攻击原理
+上面提供的点击劫持攻击案例主要涉及两个页面：一个是正常的页面（`index.html`），另一个是攻击者创建的页面（`attack.html`）。攻击的过程如下：
+
+1. **正常页面（`index.html`）**：这是一个含有一个按钮的简单页面。这个按钮的作用是显示一个警告框，告诉用户他们点击了按钮。这个页面本身是安全的，没有进行任何恶意操作。
+2. **攻击页面（`attack.html`）**：攻击者创建了这个页面，并在页面中放置了一个`<iframe>`标签，这个`iframe`加载了正常页面（即`index.html`）。然后，攻击者通过CSS将`iframe`设置为透明，并且调整位置，使其覆盖在攻击页面上的某个元素上——在这个案例中，是一个诱导用户点击的文本（例如，“点击下面的‘奖励’按钮领取奖励”）。
+3. **攻击执行**：当用户试图点击攻击页面上看似无害的元素（“奖励”按钮）时，实际上他们点击的是透明`iframe`中的按钮。因为`iframe`加载的是正常页面，所以用户实际上点击的是正常页面上的按钮，这就可能触发在正常页面上定义的任何操作。在这个简单的例子中，用户会看到一个警告框，但在更恶意的场景中，这种点击可能触发敏感操作，如发送表单数据或执行脚本，而用户则完全不知情。
+
+攻击的关键在于用户被欺骗，以为他们在与攻击者的页面交互，但实际上他们的操作影响到了被嵌入的`iframe`页面。通过精心设计页面和元素的布局，攻击者可以在用户不知情的情况下诱导用户执行各种操作。这种攻击的危险之处在于它利用了用户的信任和对页面可视元素的理解，从而绕过了传统的安全防护措施。
+
+### 防护措施
+
+防护点击劫持的一种有效方法是设置`X-Frame-Options`HTTP头。这个头信息可以用来告诉浏览器该页面是否可以在`<iframe>`、`<frame>`、`<embed>`或者`<object>`中展示。
+
+#### Node.js中设置X-Frame-Options
+
+在上述Node.js服务器代码中添加如下行，以设置`X-Frame-Options`为`DENY`，这样就不允许页面被嵌入到任何iframe中：
+
+```javascript
+app.use((req, res, next) => {
+  res.setHeader('X-Frame-Options', 'DENY');
+  next();
+});
+```
+
+或者，你可以设置为`SAMEORIGIN`，只允许同源的页面嵌入：
+
+```javascript
+app.use((req, res, next) => {
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  next();
+});
+```
+
+这些设置能有效防护点击劫持攻击，因为攻击者的页面（在不同的源上）无法嵌入被保护的页面。
+
+## 其他前端安全考虑
+
+在构建现代Web应用时，除了关注常见的安全威胁和防护措施外，还需要考虑一些其他重要的安全方面。这些包括第三方库的安全性、密码的安全处理和存储，以及前端框架的安全实践。
+
+### 第三方库的安全
+
+- **问题**：第三方库和框架极大地加速了开发过程，但它们也可能引入未知的安全漏洞。一个脆弱的库可以使整个应用受到攻击。
+- **解决方案**：
+  - **及时更新**：定期检查并更新第三方库到最新版本，特别是那些包含安全修复的版本。
+  - **使用可信源**：只从可信的来源下载库和框架，避免使用未经审查的第三方代码。
+  - **安全审计**：利用工具如npm audit或Snyk，定期审计依赖项以发现潜在的安全问题。
+  - **最小权限原则**：尽量减少第三方库的使用，只引入必要的功能，减少潜在的攻击面。
+
+### 密码安全与存储
+
+- **问题**：密码是访问控制的关键，不当的处理和存储方式可能导致严重的安全漏洞。
+- **解决方案**：
+  - **加密传输**：使用HTTPS确保密码等敏感信息在客户端和服务器间加密传输。
+  - **客户端加密**：在发送到服务器之前，在客户端对密码进行散列处理，增加额外的安全层。
+  - **安全存储**：避免在客户端长期存储密码或敏感信息，即使是加密存储也需谨慎。
+
+### 前端框架的安全实践
+
+- **问题**：现代前端框架（如React、Vue和Angular）提供了丰富的功能和组件，但错误的使用方式可能导致安全问题，如XSS攻击。
+- **解决方案**：
+  - **遵循框架的安全指南**：大多数现代前端框架都内置了防御XSS的机制，如自动转义HTML。开发者应该遵循框架的最佳实践和安全指南。
+  - **使用框架提供的安全功能**：利用框架提供的安全功能和组件，如Vue的v-bind或React的SafeAreaView，来避免安全漏洞。
+  - **定期学习和更新**：随着框架的不断更新和演进，其安全特性和最佳实践也会变化。开发者需要持续学习和适应这些变化，确保应用的安全性。
+
+通过关注这些额外的安全考虑，前端开发者可以更全面地保护Web应用免受各种威胁。同时，这也需要持续的学习和实践，因为网络安全是一个不断发展的领域，新的威胁和漏洞会不断出现。通过采用最新的安全实践和技术，可以最大限度地减少潜在的安全风险。
+
+## 安全工具与资源
+
+为了帮助前端开发人员识别和修复安全漏洞，提升代码的安全性，有许多工具和资源可供参考和使用。以下是一些关键的安全工具和资源，它们可以成为开发人员保障前端安全的有力帮手。
+
+### 安全扫描工具
+
+- **Lighthouse**：Google的开源项目，用于网页性能和质量评估，包含安全性能的评估。Lighthouse的报告可以帮助识别一些基本的安全问题，如HTTPS的使用和安全HTTP头的配置。
+- **OWASP ZAP**（Zed Attack Proxy）：这是一个为发现网页应用安全漏洞而设计的集成渗透测试工具。它适合前端开发者用于测试应用中可能存在的安全漏洞，如XSS和CSRF。
+- **Snyk**：专注于识别和修复依赖库中的安全漏洞。Snyk可以集成到开发流程中，自动检测和修复已知的安全问题，非常适合管理和保护前端项目的依赖安全。
+- **SonarQube**：提供代码质量和安全性的连续检查，支持多种编程语言。它可以帮助前端开发者在CI/CD流程中识别潜在的安全问题。
+
+### 安全编码指南
+
+- **OWASP Top 10 for Web**：OWASP发布的Web应用安全风险排行榜，为开发人员提供了关于最常见和最危险的Web应用安全威胁的指南。
+- **Mozilla Developer Network (MDN) Web Docs**：提供了关于Web安全的深入指南和最佳实践，包括如何使用HTTPS、内容安全政策（CSP）等。
+
+### 学习资源与社区
+
+- **OWASP**（开放式Web应用安全项目）：提供了广泛的文档、工具、视频和论坛，覆盖Web安全的各个方面。
+- **GitHub**：作为开源项目的聚集地，GitHub拥有大量安全相关的项目和库，提供实用的代码示例和实现指导。
+- **安全博客和播客**：关注一些知名的安全专家和组织的博客或播客，如Troy Hunt的博客，可以及时了解最新的安全动态和威胁情报。
+
+### 如何最大化这些资源的价值
+
+- **定期检查和更新工具**：保持使用的工具最新，以利用最新的安全特性和修复。
+- **定期参与培训和教育活动**：利用在线平台和社区资源保持自己的安全知识更新。
+- **实践和测试**：通过实际应用这些工具和指南中的建议，来测试和改进代码安全。
+
+通过利用这些工具和资源，前端开发人员可以提高自己在安全方面的知识和技能，更有效地保护自己的应用不受安全威胁的侵害。持续学习和应用最新的安全实践是确保前端安全的关键。
 
 ## 结论
 
-前端安全是一个广阔且不断发展的领域。通过今天的分享，我希望能够帮助大家更好地理解前端安全的重要性，以及如何防御常见的安全威胁。记住，保护好用户的数据和隐私是我们作为开发者的重要责任。最后，感谢大家的参与，如果有任何问题，我很乐意在Q&A环节进行讨论。
+### 安全是一个持续的过程
+
+在快速发展的数字时代，网络安全面临的威胁和挑战也在不断演变。新的攻击手段和安全漏洞不断被发现，这要求安全措施必须持续更新和改进。安全不是一个一次性的任务，而是一个需要持续投入和关注的过程。这包括定期更新和审计代码、使用最新的安全工具和技术、以及持续的安全培训和教育。
+
+### 开发工程师的责任与行动
+
+作为开发工程师，有责任确保自己开发的应用尽可能安全，保护用户免受网络攻击的影响。这需要开发者：
+
+- **持续学习和关注安全动态**：安全是一个广泛且不断变化的领域。开发者需要通过阅读最新的安全研究、参加相关的会议和研讨会、以及关注安全社区的动态，来不断提高自己的安全知识和技能。
+- **应用最佳安全实践**：在日常开发中遵循已建立的安全指南和最佳实践，如OWASP Top 10、使用安全的编码模式，以及定期使用安全工具审计代码。
+- **主动参与安全测试和评估**：与安全团队合作，参与应用的安全测试和评估过程，主动寻找并修复潜在的安全漏洞。
+- **倡导安全文化**：在团队和组织内部倡导安全意识，确保安全成为开发过程中的一个重要考虑因素。
+
+### 结语
+
+最终，前端安全是确保Web应用用户体验和数据安全的关键组成部分。通过采取主动的安全措施，前端工程师可以显著降低安全威胁带来的风险，为用户提供一个安全、可靠的数字环境。安全是每个参与项目开发人员的责任，通过持续的努力和合作，我们可以构建更加安全的Web应用和服务。

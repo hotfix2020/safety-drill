@@ -9,9 +9,9 @@ router.use(cookieParser())
 // 设置一个简单的登录页面
 router.get('/csrf/login', (req, res) => {
 	res.send(`<form action="/csrf/login" method="post">
-              <input type="text" name="username" placeholder="Username" />
-              <input type="password" name="password" placeholder="Password" />
-              <button type="submit">Login</button>
+              <input type="text" name="username" placeholder="账号" />
+              <input type="password" name="password" placeholder="密码" />
+              <button type="submit">登录</button>
             </form>`)
 })
 
@@ -19,16 +19,16 @@ router.get('/csrf/login', (req, res) => {
 router.post('/csrf/login', (req, res) => {
 	// 设置简单的登录Cookie
 	res.cookie('auth', 'dummy-token')
-	res.send('Logged in')
+	res.send('登录成功')
 })
 
 // 受保护的操作
 router.post('/csrf/action', (req, res) => {
 	const token = req.cookies.auth
 	if (token === 'dummy-token') {
-		res.send('Action performed')
+		res.send('执行成功')
 	} else {
-		res.send('Not authorized')
+		res.send('验证未通过')
 	}
 })
 

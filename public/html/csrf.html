@@ -3,13 +3,13 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>CSRF Attack</title>
+  <title>CSRF 攻击示例</title>
 </head>
 
 <body>
-  <h1>You've won a prize! Click the button to claim!</h1>
+  <h1>你中奖了!点击按钮领取!</h1>
   <form action="/csrf/action" method="POST" id="fakeForm">
-    <button type="submit">Claim Your Prize!</button>
+    <button type="submit">领取奖品！</button>
   </form>
   <script src="./csrf.js"></script>
 </body>
