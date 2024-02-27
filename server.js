@@ -2,7 +2,8 @@ const express = require('express')
 const cookieParser = require('cookie-parser')
 
 const app = express()
-const port = 8000
+const port = 443
+const host = "0.0.0.0"
 
 // 设置CSP以及其他安全相关的HTTP头部
 // const helmet = require('helmet');
@@ -46,6 +47,6 @@ app.use((req, res, next) => {
 	next()
 })
 
-app.listen(port, () => {
-	console.log(`Server listening at http://localhost:${port}`)
+app.listen(port, host, () => {
+	console.log(`Server listening at http://${host}:${port}`)
 })
