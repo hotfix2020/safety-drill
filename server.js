@@ -19,6 +19,27 @@ const host = "0.0.0.0"
 //   },
 // }));
 
+app.use((err, req, res, next) => {
+  console.log('<-----------------------error start----------------------->')
+  console.error(err.stack); // 打印错误栈信息到控制台
+  console.log('<-----------------------error end----------------------->')
+  res.status(500).send('Something broke!'); // 发送一个500响应
+});
+
+
+// 使用cookie-parser中间件
+app.use(cookieParser())
+
+// 自定义中间件来设置cookie
+app.use((req, res, next) => {
+	// 检查请求中是否已有cookie，如果没有则设置一个
+	if (!req.cookies.token) {
+		// 设置cookie，此处为示例，实际应用中可能没有cookie需要登录验证之类的
+		res.cookie('token', Date.now(), { maxAge: 900000, httpOnly: true })
+	}
+	next()
+})
+
 // 引入xss模块
 const xssReflectedRoutes = require('./routes/xss/reflected')
 const xssStoredRoutes = require('./routes/xss/stored')
@@ -34,19 +55,18 @@ app.use(csrfRoutes)
 // 用于托管静态文件
 app.use(express.static('public'))
 
-// 使用cookie-parser中间件
-app.use(cookieParser())
-
-// 自定义中间件来设置cookie
-app.use((req, res, next) => {
-	// 检查请求中是否已有cookie，如果没有则设置一个
-	if (!req.cookies.token) {
-		// 设置cookie，此处为示例，实际应用中可能没有cookie需要登录验证之类的
-		res.cookie('token', Date.now(), { maxAge: 900000, httpOnly: true })
-	}
-	next()
-})
-
 app.listen(port, host, () => {
-	console.log(`Server listening at http://${host}:${port}`)
+	console.log(`Server listening at ${host}:${port}`)
 })
+
+process.on('uncaughtException', (err) => {
+  console.error('有一个未被捕获的异常');
+  console.log(err);
+  process.exit(1); // 退出程序
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('没有处理的拒绝', promise, 'reason:', reason);
+  // 应用的退出逻辑或重启逻辑
+});
+
