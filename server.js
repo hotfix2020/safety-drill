@@ -14,7 +14,7 @@ const IS_SECURITY = args[2] || '' // 默认打开安全配置
 // 使用helmet提升安全性
 app.use(helmet())
 
-if (IS_SECURITY === 'openSecurity') {
+if (IS_SECURITY === 'open') {
 	// 设置X-Frame-Options为DENY 不允许页面被嵌入到任何iframe中， SAMEORIGIN，只允许同源的页面嵌入
 	app.use(helmet.frameguard({ action: 'deny' }))
 

@@ -6,9 +6,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "node server 3000 localhost",
-    "dev-open": "node server 3000 localhost openSecurity",
+    "dev-open": "node server 3000 localhost open",
     "pro": "node server 443 0.0.0.0",
-    "pro-open": "node server 443 0.0.0.0 openSecurity"
+    "pro-open": "node server 443 0.0.0.0 open"
   },
   "repository": {
     "type": "git",
