@@ -7,8 +7,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "node server 3000 localhost",
     "dev-open-csp": "node server 3000 localhost openCSP",
-    "pro": "node server 443 0.0.0.0",
-    "pro-open-csp": "node server 443 0.0.0.0 openCSP"
+    "pro": "sudo node server 443 0.0.0.0",
+    "pro-open-csp": "sudo node server 443 0.0.0.0 openCSP"
   },
   "repository": {
     "type": "git",
