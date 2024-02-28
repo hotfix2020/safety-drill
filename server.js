@@ -26,7 +26,7 @@ if (IS_SECURITY === 'open') {
 				scriptSrc: ["'self'", 'https://example.com'], // 允许执行这些源的脚本
 				styleSrc: ["'self'", "'unsafe-inline'", 'https://example.com'], // 允许使用自身和指定example上的样式表
 				objectSrc: ["'none'"], // 不允许<object>, <embed>, 和<applet>元素加载任何资源
-				upgradeInsecureRequests: [], // 将不安全的请求（http）升级为安全的请求（https）
+				// upgradeInsecureRequests: [], // 将不安全的请求（http）升级为安全的请求（https）
 				frameAncestors: ["'self'"], // 与X-Frame-Options的DENY相同，禁止页面被嵌入到任何iframe或frame中
 			},
 			// 设置报告URI，可用于收集违反CSP的报告
