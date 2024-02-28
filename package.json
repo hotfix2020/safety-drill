@@ -8,7 +8,8 @@
     "dev": "node server 3000 localhost",
     "dev-open": "node server 3000 localhost open",
     "pro": "node server 443 0.0.0.0",
-    "pro-open": "node server 443 0.0.0.0 open"
+    "pro-open": "node server 443 0.0.0.0 open",
+    "pro-80": "node server 80 0.0.0.0"
   },
   "repository": {
     "type": "git",
