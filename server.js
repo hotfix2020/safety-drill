@@ -11,13 +11,11 @@ const PORT = args[0] || 3000 // 如果命令行中提供了端口，使用该端
 const HOST = args[1] || 'localhost' // 如果命令行中提供了主机，使用该主机，否则默认为localhost
 const IS_SECURITY = args[2] || '' // 默认打开安全配置
 
-// 使用helmet提升安全性
-app.use(helmet())
-
 if (IS_SECURITY === 'open') {
+	// 使用helmet提升安全性
+	app.use(helmet())
 	// 设置X-Frame-Options为DENY 不允许页面被嵌入到任何iframe中， SAMEORIGIN，只允许同源的页面嵌入
 	app.use(helmet.frameguard({ action: 'deny' }))
-
 	// 设置Content-Security-Policy
 	app.use(
 		helmet.contentSecurityPolicy({
