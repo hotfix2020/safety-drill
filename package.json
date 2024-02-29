@@ -10,7 +10,8 @@
     "pro": "node server 443 0.0.0.0",
     "pro-open": "node server 443 0.0.0.0 open",
     "pro-80": "node server 80 0.0.0.0",
-    "pro-8000": "node server 8000 0.0.0.0"
+    "pro-8000": "node server 8000 0.0.0.0",
+    "pro-8001-open": "node server 8000 0.0.0.0 open"
   },
   "repository": {
     "type": "git",
