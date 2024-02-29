@@ -13,13 +13,18 @@ const IS_SECURITY = args[2] || '' // 默认打开安全配置
 
 if (IS_SECURITY === 'open') {
 	// 使用helmet提升安全性
-	// app.use(helmet())
+	app.use(helmet())
 	// 设置X-Frame-Options为DENY 不允许页面被嵌入到任何iframe中， SAMEORIGIN，只允许同源的页面嵌入
-	app.use(helmet.frameguard({ action: 'deny' }))
+	app.use(
+		helmet({
+			xFrameOptions: { action: 'sameorigin' },
+		})
+	)
 	// 设置Content-Security-Policy
 	app.use(
 		helmet({
 			contentSecurityPolicy: {
+				useDefaults: false,
 				directives: {
 					defaultSrc: ["'self'"], // 只允许执行同源的脚本
 					scriptSrc: ["'self'", 'https://example.com'], // 允许执行这些源的脚本
