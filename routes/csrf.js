@@ -18,15 +18,17 @@ router.get('/csrf/login', (req, res) => {
 // 登录接口，简化处理，实际开发需要安全验证
 router.post('/csrf/login', (req, res) => {
 	// 设置简单的登录Cookie
+	// res.cookie('auth', 'dummy-token', { sameSite: 'strict' }) // 防止csrf
 	res.cookie('auth', 'dummy-token')
 	res.send('登录成功')
 })
 
 // 受保护的操作
 router.post('/csrf/action', (req, res) => {
+	console.log(req.cookies)
 	const token = req.cookies.auth
 	if (token === 'dummy-token') {
-		res.send('执行成功')
+		res.status(200).send({ message: '执行成功' })
 	} else {
 		res.send('验证未通过')
 	}
