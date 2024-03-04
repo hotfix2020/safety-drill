@@ -102,7 +102,7 @@ fetchMessages() // 页面加载时获取留言
 ![攻击路径](./images/xss-stored.png "存储型攻击路径")
 
 #### 真实案例
-2014年针对社交媒体网站Twitter的“TweetDeck”应用程序的XSS攻击是一个著名案例。攻击者发布了一条包含恶意JavaScript代码的Tweet。当这条Tweet通过TweetDeck被查看时，嵌入的脚本在用户浏览器上执行，导致脚本自我复制并影响了大量用户。
+一个著名案例，2014年针对社交媒体网站Twitter的“TweetDeck”应用程序的XSS攻击。攻击者发布了一条包含恶意JavaScript代码的Tweet。当这条Tweet通过TweetDeck被查看时，嵌入的脚本在用户浏览器上执行，导致脚本自我复制并影响了大量用户。
 
 ### [反射型XSS](/html/xss/reflected?userInput=<script>alert('XSS')</script>)
 
@@ -123,11 +123,11 @@ router.get('/xss/api/reflected', (req, res) => {
 **攻击示例：**
 
 ```
-/html/xss/reflected?userInput=<script>alert('XSS')</script>
-/html/xss/reflected?userInput=<img src='invalid-image' onerror='alert(document.cookie);'/>
 /html/xss/reflected?userInput=<a href="javascript:alert('XSS via Link')">Click me</a>
 /html/xss/reflected?userInput=<div onmouseover="alert('XSS via Hover')">Hover over me</div>
 /html/xss/reflected?userInput=<form action="javascript:alert('XSS via Form Submission')"><input type="submit" value="Submit"/></form>
+/html/xss/reflected?userInput=<img src='invalid-image' onerror='alert(document.cookie);'/>
+/html/xss/reflected?userInput=<script>alert('XSS')</script>
 ```
 
 **攻击路径：**
@@ -140,7 +140,7 @@ router.get('/xss/api/reflected', (req, res) => {
 
 ### [基于DOM的XSS](./html/xss/dom.html)
 
-基于DOM的XSS攻击（DOM-based XSS）是一种特殊类型的跨站脚本攻击，它发生在客户端浏览器中，而不涉及到服务器端的数据处理。这种攻击主要利用了网页的DOM（文档对象模型）环境中存在的漏洞，通过修改DOM环境中的数据来插入恶意脚本。与其他类型的XSS攻击相比，基于DOM的XSS攻击完全在客户端执行，不需要服务器处理恶意脚本。DOM型XSS攻击最常见的来源是 URL，通常使用 window.location 对象访问。攻击者可以构建一个链接，将受害者发送到易受攻击的页面，并在查询字符串和 URL 的片段部分中包含有效负载。这段代码利用JavaScript访问和修改DOM，从而执行未经授权的操作。这可能包括窃取cookie、会话劫持、重定向到恶意网站等。
+基于DOM的XSS攻击（DOM-based XSS）是一种特殊类型的跨站脚本攻击，它发生在客户端浏览器中，而不涉及到服务器端的数据处理。这种攻击主要利用了网页的DOM（文档对象模型）环境中存在的漏洞，通过修改DOM环境中的数据来插入恶意脚本。与其他类型的XSS攻击相比，基于DOM的XSS攻击完全在客户端执行，不需要服务器处理恶意脚本。DOM型XSS攻击最常见的来源是 URL，通常使用 window.location 对象访问。攻击者可以构建一个链接，发送给受害者，并在查询字符串和 URL 的片段部分中包含有效负载。这段代码利用JavaScript访问和修改DOM，从而执行未经授权的操作。这可能包括窃取cookie、会话劫持、重定向到恶意网站等。
 
 #### 示例
 
@@ -160,7 +160,12 @@ document.getElementById('message').innerHTML = decodeURIComponent(location.searc
 **攻击示例：**
 
 ```
-http://example.com/?msg=<img src='invalid-image' onerror='alert(document.cookie);'/>
+http://wanner.vip/html/xss/dom.html?msg=<img src='invalid-image' onerror='alert(document.cookie);'/>
+msg=<a href="javascript:alert('XSS via Link')">Click me</a>
+msg=<div onmouseover="alert('XSS via Hover')">Hover over me</div>
+msg=<form action="javascript:alert('XSS via Form Submission')"><input type="submit" value="Submit"/></form>
+msg=<img src='invalid-image' onerror='alert(document.cookie);'/>
+msg=<script>alert('XSS')</script>
 ```
 
 在这个例子中，网页通过JavaScript读取URL中的msg参数，并将其值直接插入到页面的DOM中。如果一个攻击者构造了一个含有恶意JavaScript代码的URL，当这个URL被访问时，恶意代码就会被执行。
@@ -267,13 +272,11 @@ CSRF攻击并不直接违反同源策略。相反，攻击利用的是Web应用�
 
 ### 真实案例
 
-有几个著名的CSRF攻击真实案例：
+有两个著名的CSRF攻击真实案例：
 
 1. TikTok（2020年）：TikTok存在一个漏洞，允许攻击者向用户发送含有恶意软件的消息。一旦恶意软件部署，攻击者可以利用它执行CSRF或跨站脚本（XSS）攻击，导致其他用户账户代表攻击者向TikTok应用提交请求。TikTok在三周内修补了这个漏洞​​。
 
-2. McAfee（2014年）：Check Point研究人员发现McAfee网络安全管理器的用户管理模块存在CSRF漏洞，该漏洞允许恶意用户修改其他用户账户。该漏洞在版本8.1.7.3中得到修补​​。
-
-3. YouTube（2008年）：普林斯顿大学的研究人员在YouTube上发现了一个CSRF漏洞，允许攻击者代表任何用户执行几乎所有操作，包括添加视频到收藏夹、修改朋友/家人列表、向用户联系人发送消息和标记不当内容。这个漏洞被立即修复​​。
+2. YouTube（2008年）：普林斯顿大学的研究人员在YouTube上发现了一个CSRF漏洞，允许攻击者代表任何用户执行几乎所有操作，包括添加视频到收藏夹、修改朋友/家人列表、向用户联系人发送消息和标记不当内容。这个漏洞被立即修复​​。
 
 ### 防御措施
 
@@ -381,15 +384,6 @@ app.listen(3000, () => {
 
 ![攻击路径](./images/clickjacking.png "点击劫持攻击路径")
 
-#### 攻击原理
-上面提供的点击劫持攻击案例主要涉及两个页面：一个是正常的页面（`index.html`），另一个是攻击者创建的页面（`attack.html`）。攻击的过程如下：
-
-1. **正常页面（`index.html`）**：这是一个含有一个按钮的简单页面。这个按钮的作用是显示一个警告框，告诉用户他们点击了按钮。这个页面本身是安全的，没有进行任何恶意操作。
-2. **攻击页面（`attack.html`）**：攻击者创建了这个页面，并在页面中放置了一个`<iframe>`标签，这个`iframe`加载了正常页面（即`index.html`）。然后，攻击者通过CSS将`iframe`设置为透明，并且调整位置，使其覆盖在攻击页面上的某个元素上——在这个案例中，是一个诱导用户点击的文本（例如，“点击下面的‘奖励’按钮领取奖励”）。
-3. **攻击执行**：当用户试图点击攻击页面上看似无害的元素（“奖励”按钮）时，实际上他们点击的是透明`iframe`中的按钮。因为`iframe`加载的是正常页面，所以用户实际上点击的是正常页面上的按钮，这就可能触发在正常页面上定义的任何操作。在这个简单的例子中，用户会看到一个警告框，但在更恶意的场景中，这种点击可能触发敏感操作，如发送表单数据或执行脚本，而用户则完全不知情。
-
-攻击的关键在于用户被欺骗，以为他们在与攻击者的页面交互，但实际上他们的操作影响到了被嵌入的`iframe`页面。通过精心设计页面和元素的布局，攻击者可以在用户不知情的情况下诱导用户执行各种操作。这种攻击的危险之处在于它利用了用户的信任和对页面可视元素的理解，从而绕过了传统的安全防护措施。
-
 ### 真实案例
 在2011年，意大利发生了一起著名的点击劫持案例，攻击者利用点击劫持技术劫持Facebook用户的“赞”操作。还有一个案例是2015年，一位加拿大广播公司的记者发现自己不知不觉中为加拿大保守党点了赞。在这种攻击中，攻击者创建一个不可见的iframe或者通过其他方法遮盖真实的“点赞”按钮，并将其与用户看到的另一个元素重叠。当用户认为他们在点击一个无害的按钮或链接时，实际上他们点击的是隐藏的“点赞”按钮，从而在不知情的情况下为某个页面或帖子点赞。危害在于，它可以用来人为地提高某个页面或内容的受欢迎程度，误导其他用户和影响他们的观点。此外，这种攻击还可能用于传播恶意软件，当用户点击被劫持的“点赞”按钮时，他们可能会被重定向到含有恶意软件的网站。
 
@@ -429,13 +423,15 @@ app.listen(3000, () => {
 
 ### 真实案例
 
-1. 事件流攻击（Event-Stream Incident）：在2018年，一个受欢迎的NPM包 event-stream 被发现包含恶意代码。这个包被一个恶意用户接管，他在其中添加了一个窃取加密货币钱包信息的恶意包 flatmap-stream。这个事件影响了使用 event-stream 的数百万开发项目，展示了供应链攻击的风险。
+1. **Event-Stream 事件**：这是一个广为人知的 npm 包事件流的安全事件。2018年，攻击者通过接管一个受欢迎的 npm 包event-stream的维护权，并在其中嵌入恶意代码。这个恶意版本被下载数百万次，在未经用户同意的情况下，尝试窃取比特币钱包的资金。这一事件强调了监控和审计第三方依赖的重要性。
+   
+2. **jQuery File Upload插件漏洞**：这是一个在jQuery File Upload插件中发现的漏洞，影响了数以万计的项目。该漏洞允许攻击者上传恶意文件到服务器，可能导致未授权的代码执行。这个问题存在了许多年，直到2018年才被发现并修复。
 
-2. Copay钱包攻击：这个案例与上面提到的事件流（event-stream）攻击有关。恶意代码被嵌入到了event-stream库的依赖flatmap-stream中，该库被加密货币钱包Copay使用。攻击者的目标是窃取Copay钱包中存储的比特币和比特币现金。这个攻击引起了对于开源库安全性的广泛关注，尤其是在加密货币领域。
+3. **RubyGems 的 strong_password 漏洞**：2019年，RubyGems 的一个受欢迎的包 strong_password 被发现含有后门。这个后门允许远程代码执行，攻击者可以利用它在使用该gem的系统上执行任意代码。这一事件突显了即使是在受信任的源中，也需要对库进行安全审查。
 
-3. jQuery File Upload插件漏洞：这是一个在jQuery File Upload插件中发现的漏洞，影响了数以万计的项目。该漏洞允许攻击者上传恶意文件到服务器，可能导致未授权的代码执行。这个问题存在了许多年，直到2018年才被发现并修复。
+4. **Bootstrap-Sass Ruby Gem 事件**：在2019年，bootstrap-sass Ruby gem 的一个版本被篡改，其中包含了恶意代码。该代码被设计为在服务器上下载并执行一个远程脚本，这可能导致严重的安全漏洞。这一事件再次证明了即使是广泛使用的库也可能成为攻击的目标。
 
-4. Bootstrap-sass Ruby Gem恶意代码：在2019年，一个受欢迎的Ruby Gem bootstrap-sass 被发现包含恶意代码。该恶意代码被用来窃取加密货币。这个库被广泛用于Ruby on Rails应用程序，事件再次提醒了开发者监控其依赖的重要性。
+通过分析这些案例，开发者可以了解到：即使是广泛信赖和使用的第三方库，也可能存在被植入恶意代码的风险。这强调了定期审查和更新第三方依赖的重要性，以及实施自动化安全扫描和监控措施的必要性。
 
 ### 防护措施
 
@@ -454,8 +450,6 @@ app.listen(3000, () => {
 通过上述措施，可以在享受第三方库带来的便利的同时，最大程度地减少潜在的安全风险。
 
 ## 其他前端安全考虑
-
-在构建现代Web应用时，除了关注常见的安全威胁和防护措施外，还需要考虑一些其他重要的安全方面。这些包括密码的安全处理和存储，以及前端框架的安全实践。
 
 ### 密码安全与存储
 
@@ -476,8 +470,6 @@ app.listen(3000, () => {
 通过关注这些额外的安全考虑，前端开发者可以更全面地保护Web应用免受各种威胁。同时，这也需要持续的学习和实践，因为网络安全是一个不断发展的领域，新的威胁和漏洞会不断出现。通过采用最新的安全实践和技术，可以最大限度地减少潜在的安全风险。
 
 ## 安全工具与资源
-
-为了帮助前端开发人员识别和修复安全漏洞，提升代码的安全性，有许多工具和资源可供参考和使用。以下是一些关键的安全工具和资源，它们可以成为开发人员保障前端安全的有力帮手。
 
 ### 安全扫描工具
 
@@ -504,15 +496,6 @@ app.listen(3000, () => {
 ### 安全是一个持续的过程
 
 在快速发展的数字时代，网络安全面临的威胁和挑战也在不断演变。新的攻击手段和安全漏洞不断被发现，这要求安全措施必须持续更新和改进。安全不是一个一次性的任务，而是一个需要持续投入和关注的过程。这包括定期更新和审计代码、使用最新的安全工具和技术、以及持续的安全培训和教育。
-
-### 开发工程师的责任与行动
-
-作为开发工程师，有责任确保自己开发的应用尽可能安全，保护用户免受网络攻击的影响。这需要开发者：
-
-- **持续学习和关注安全动态**：安全是一个广泛且不断变化的领域。开发者需要通过阅读最新的安全研究、参加相关的会议和研讨会、以及关注安全社区的动态，来不断提高自己的安全知识和技能。
-- **应用最佳安全实践**：在日常开发中遵循已建立的安全指南和最佳实践，如OWASP Top 10、使用安全的编码模式，以及定期使用安全工具审计代码。
-- **主动参与安全测试和评估**：与安全团队合作，参与应用的安全测试和评估过程，主动寻找并修复潜在的安全漏洞。
-- **倡导安全文化**：在团队和组织内部倡导安全意识，确保安全成为开发过程中的一个重要考虑因素。
 
 ### 结语
 
