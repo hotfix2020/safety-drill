@@ -1,8 +1,8 @@
 # 前端安全演示分享
 
-## 跨站脚本攻击（XSS）
+## 跨站脚本攻击XSS（Cross Site Scripting）
 
-跨站脚本攻击（XSS）是一种常见的网络安全漏洞，允许攻击者将恶意脚本注入到正常用户会看到的页面中。这些脚本在用户的浏览器中执行时，可以访问用户的会话token、cookie等敏感信息，甚至可以重写网页内容或重定向用户到其他网站。XSS攻击通常分为三种类型：存储型（Persistent）、反射型（Reflected）和基于DOM（Document Object Model）的XSS。
+跨站脚本攻击XSS（Cross Site Scripting）是一种常见的网络安全漏洞，允许攻击者将恶意脚本注入到正常用户会看到的页面中。这些脚本在用户的浏览器中执行时，可以访问用户的会话token、cookie等敏感信息，甚至可以重写网页内容或重定向用户到其他网站。XSS攻击通常分为三种类型：存储型（Persistent）、反射型（Reflected）和基于DOM（Document Object Model）的XSS。
 
 ### [存储型XSS](./html/xss/stored.html) 
 
@@ -175,7 +175,7 @@ http://example.com/?msg=<img src='invalid-image' onerror='alert(document.cookie)
 ### 防御措施
 
 - 对所有用户输入进行验证、过滤和转义。
-- 使用内容安全策略（CSP）来减少XSS攻击的风险。
+- 使用内容安全策略[（CSP）](./CSP.html)来减少XSS攻击的风险。
 - 对于敏感操作，不要仅仅依赖于来自用户的输入。
 - 在服务器端实现适当的输入处理逻辑，确保不信任的数据被安全处理。
 - 使用现代Web框架和库，比如vue，react它们通常提供了自动的XSS防护。
