@@ -13,3 +13,15 @@
 ## 本地运行
 
 `node server 3000 localhost`
+
+**开启csp等防御：**
+
+`node server 3000 localhost open`
+
+## 服务器运行
+
+`node server 8000 0.0.0.0`
+
+**开启csp等防御：**
+
+`node server 8000 0.0.0.0 open`
