@@ -1,408 +1,455 @@
-# 前端安全分享
+# 前端安全演示分享
 
-## I. 引言
+## 跨站脚本攻击XSS（Cross Site Scripting）
 
-### 安全的重要性
+跨站脚本攻击XSS（Cross Site Scripting）是一种常见的网络安全漏洞，允许攻击者将恶意脚本注入到正常用户会看到的页面中。这些脚本在用户的浏览器中执行时，可以访问用户的会话token、cookie等敏感信息，甚至可以重写网页内容或重定向用户到其他网站。XSS攻击通常分为三种类型：存储型（Persistent）、反射型（Reflected）和基于DOM（Document Object Model）的XSS。
 
-在数字化时代，网络安全已成为保护企业和个人信息资产不受威胁的首要任务。随着技术的发展，攻击手段不断演变，从而对信息系统的安全性提出了更高的要求。安全漏洞可能导致敏感数据泄露、服务中断甚至财产损失，因此，了解和实施有效的安全措施对于维护数字世界的信任和稳定至关重要。
+### [存储型XSS](./html/xss/stored.html) 
 
-### 前端在安全中的角色
+存储型XSS攻击发生在攻击者的输入被存储在目标服务器上，如数据库、消息论坛、访客留言板等。当用户浏览含有恶意脚本的页面时，脚本会被执行。
 
-前端开发，尽管传统上被视为主要关注于用户界面和用户体验的领域，但其在维护网络安全中扮演着至关重要的角色。前端安全涉及到保护网站或应用免受跨站脚本（XSS）、跨站请求伪造（CSRF）、点击劫持等攻击，这些攻击直接影响到最终用户的安全和隐私。
+#### 示例
 
-- **用户接口的第一道防线**：前端是用户与应用程序交互的第一层，因此也是暴露给攻击者的第一道门户。通过在前端实施安全措施，可以有效预防一系列攻击，保护用户数据免受泄露，并维持用户信任。
-- **输入验证和数据处理**：虽然安全的规则要求后端对所有输入进行验证，但前端验证可以减少恶意数据到达服务器的机会，减轻后端的压力，并提供即时的用户反馈，改善用户体验。
-- **教育用户**：前端还可以通过界面设计来教育用户识别和避免潜在的安全威胁，例如通过警告用户识别可能的钓鱼链接或不安全的内容。
+**后端代码（Node.js）：**
 
-在这个背景下，前端开发人员需要具备安全意识，了解常见的安全威胁及其防护措施。这不仅要求技术知识的积累，也需要持续关注最新的安全趋势和漏洞，以便及时更新和加固前端安全措施。通过结合安全最佳实践，前端开发不仅能提升应用的整体安全性，还能为用户打造一个更加安全、可靠的数字环境。
+存储用户输入到数据库中，没有对用户输入进行充分的过滤或转义。
 
-## II. XSS（跨站脚本攻击）
-
-### 概念与影响
-
-跨站脚本攻击（XSS）是一种允许攻击者在用户浏览器上执行恶意脚本的网络安全漏洞。这类攻击通常通过向网页注入恶意的HTML或JavaScript代码来实施，导致当其他用户访问这些被篡改的网页时，恶意脚本会在其浏览器上执行。这可能导致会话cookie被盗取、网页内容被操纵或用户被重定向到恶意网站，从而严重威胁用户的隐私和安全。
-
-### 防御策略
-
-#### 输入验证与输出编码
-
-- **输入验证**：对所有用户输入进行严格的验证，防止恶意数据进入应用程序。这包括验证数据的类型、长度和格式。例如，如果期望的输入是一个电子邮件地址，应确保输入符合电子邮件的标准格式。
-
-  **代码示例**：
-  ```javascript
-  // 简单的电子邮件格式验证
-  function isValidEmail(input) {
-      const re = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
-      return re.test(String(input).toLowerCase());
-  }
-  ```
-
-- **输出编码**：在将用户输入的数据回显到页面上之前，对其进行适当的编码，将特殊字符转换成HTML实体，防止这些字符被浏览器解释为有效的HTML或JavaScript代码。
-
-  **代码示例**：
-  ```javascript
-  // HTML实体编码示例
-  function encodeHtml(str) {
-      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-  }
-  ```
-
-#### 内容安全策略（CSP）
-
-内容安全策略（CSP）提供了一种额外的安全层，用于检测和减轻XSS和数据注入攻击。CSP通过允许网站管理员定义哪些动态资源可以被执行，有效地防止了恶意脚本的执行。为了实施CSP，应在服务器的HTTP响应头中设置合适的`Content-Security-Policy`头。
-
-- **实施CSP的步骤**：
-  1. **确定资源策略**：分析你的应用，确定哪些资源（如脚本、样式表、图片等）是必需的，以及它们的来源。
-  2. **配置CSP策略**：基于这些信息，创建一个策略，指定可以加载资源的来源。例如，只允许从当前域加载脚本。
-  3. **在服务器配置中添加CSP**：通过向HTTP响应头添加`Content-Security-Policy`，实施你的策略。
-
-  **示例CSP配置**：
-  ```
-  Content-Security-Policy: default-src 'self'; script-src 'self' https://apis.example.com
-  ```
-
-#### 正例：使用文本内容而非HTML
-
-- **场景**：当需要在页面上显示用户输入的数据时，应优先使用纯文本方式而不是直接将内容作为HTML插入。这避免了恶意脚本的执行。
-
-  **代码示例**：
-  ```javascript
-  // 使用innerText安全地添加用户内容
-  const userContent = "<script>alert('XSS');</script>";
-  document.getElementById("safeContent").innerText = userContent;
-  ```
-
-#### 反例：直接将用户输入作为HTML插入
-
-- **场景**：直接将用户输入作为HTML内容插入到页面中，可能会导致XSS攻击。
-
-  **代码示例**：
-  ```javascript
-  // 危险的做法，可能引发XSS攻击
-  const userContent = "<script>alert('XSS');</script>";
-  document.getElementById("dangerContent").innerHTML = userContent;
-  ```
-
-### 实际案例分析
-
-2014年针对社交媒体网站Twitter的“TweetDeck”应用程序的XSS攻击是一个著名案例。攻击者发布了一条包含恶意JavaScript代码的Tweet。当这条Tweet通过TweetDeck被查看时，嵌入的脚本在用户浏览器上执行，导致脚本自我复制并影响了大量用户。Twitter迅速修复了漏洞，但此事件凸显了XSS攻击的潜在危害及防御的重要性。
-
-这一案例突显了严格验证用户输入和编码输出的重要性，以及实施CSP作为一种有效的深度防御策略。通过采取这些措施，前端开发者可以大大降低XSS攻击的风险，保护用户不受恶意脚本的影响。
-
-## III. CSRF（跨站请求伪造）
-
-### 概念与影响
-
-CSRF（Cross-Site Request Forgery），也称为一击攻击或会话骑乘，是一种攻击方法，其中攻击者诱导已认证的用户执行在Web应用中未授权的操作。这类攻击利用了Web应用的信任用户的身份验证状态。如果成功，攻击者可以执行诸如更改密码、转账或修改用户设置等操作，而受害者对此毫无察觉。
-
-### 防御策略
-
-#### 使用Token
-
-**Anti-CSRF Token** 是对抗CSRF攻击的有效手段。在敏感操作中，服务器生成一个随机且唯一的令牌，并将其嵌入到客户端提交的表单中。当表单提交时，服务器检查接收到的令牌是否与用户会话中存储的令牌相匹配。这确保了请求是由用户本人发起的，因为攻击者无法预测或获取这个令牌。
-
-**实践建议**：
-- 在每个表单请求中嵌入唯一令牌，并在服务器端进行验证。
-- 在用户会话中存储令牌，并在每次请求时验证。
-- 对于Ajax请求，也使用令牌验证，可以通过自定义HTTP头发送令牌。
-
-#### 双重Cookie验证
-
-双重Cookie验证是一种无需在服务器端存储令牌状态的CSRF防护机制。此方法基于一个假设：攻击者不能读取或设置目标域的Cookie。在用户登录时，服务器生成一个随机令牌并作为Cookie发送给用户。对于后续的每个请求，客户端必须从Cookie中读取这个令牌，并以请求参数或自定义HTTP头的形式发送它。服务器随后验证请求中的令牌与Cookie中的令牌是否一致。
-
-**实践建议**：
-- 当用户登录时，生成一个随机令牌并存储在Cookie中。
-- 要求客户端在执行敏感操作的请求中提供这个令牌。
-- 在服务器端，验证请求中的令牌与Cookie中的令牌是否匹配。
-
-**代码示例**：
 ```javascript
-// 设置CSRF令牌Cookie
-document.cookie = "csrf_token=随机生成的令牌; path=/; secure";
+// 用于存储留言的数组
+const messages = []
 
-// 在发送请求时，从Cookie中读取令牌并添加到请求头或参数中
-let csrfToken = document.cookie.replace(/(?:(?:^|.*;\s*)csrf_token\s*\=\s*([^;]*).*$)|^.*$/, "$1");
-fetch('/api/endpoint', {
-    method: 'POST',
-    headers: {
-        'CSRF-Token': csrfToken, // 或者作为请求参数发送
-    },
-    body: JSON.stringify(data),
+// 获取所有留言
+router.get('/xss/api/messages', (req, res) => {
+	res.json(messages)
+})
+
+// 提交新留言
+router.post('/xss/api/messages', (req, res) => {
+	const message = req.body.message
+	if (message) {
+		messages.push(message) // 将新留言添加到数组中
+		res.status(201).send({ message: 'successfully.' })
+	} else {
+		res.status(400).send({ error: 'Message is required.' })
+	}
+})
+```
+
+**前端代码：**
+
+显示来自用户的评论，没有进行适当的转义。
+
+```html
+<h2>留言板</h2>
+<form id="messageForm">
+  <input type="text" id="messageInput" placeholder="留言内容" required>
+  <button type="submit">提交留言</button>
+</form>
+<ul id="messagesList"></ul>
+
+<script src="./stored.js"></script>
+```
+
+```javascript
+document.getElementById('messageForm').addEventListener('submit', function (e) {
+	e.preventDefault()
+	const messageContent = document.getElementById('messageInput').value
+	fetch('/xss/api/messages', {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+		},
+		body: JSON.stringify({ message: messageContent }),
+	})
+		.then(response => response.json())
+		.then(data => {
+			fetchMessages() // 重新加载留言
+		})
+		.catch(error => console.error('Error:', error))
+})
+
+function fetchMessages() {
+	fetch('/xss/api/messages')
+		.then(response => response.json())
+		.then(messages => {
+			const messagesList = document.getElementById('messagesList')
+			messagesList.innerHTML = '' // 清空列表
+			messages.forEach(message => {
+				const li = document.createElement('li')
+				li.innerHTML = message // 这里存在XSS漏洞
+				messagesList.appendChild(li)
+			})
+		})
+		.catch(error => console.error('Error:', error))
+}
+
+fetchMessages() // 页面加载时获取留言
+```
+
+**攻击示例：**
+
+```
+<img src='invalid-image' onerror='alert(document.cookie);'/>
+<img src="https://picx.zhimg.com/v2-c198652e6abd6cd1e6d0e0f83d722c94_720w.jpg?source=172ae18b" onload="alert('XSS');" />
+<a href="javascript:alert('XSS');">Click me!</a>
+<iframe src="javascript:alert('XSS');"></iframe>
+<button type="button" onclick="javascript:alert('XSS');">Click Me!</button>
+<script>alert('XSS');</script>
+```
+
+**攻击路径：**
+
+![攻击路径](./images/xss-stored.png "存储型攻击路径")
+
+#### 真实案例
+一个著名案例，2014年针对社交媒体网站Twitter的“TweetDeck”应用程序的XSS攻击。攻击者发布了一条包含恶意JavaScript代码的Tweet。当这条Tweet通过TweetDeck被查看时，嵌入的脚本在用户浏览器上执行，导致脚本自我复制并影响了大量用户。
+
+### [反射型XSS](/html/xss/reflected?userInput=<script>alert('XSS')</script>)
+
+反射型XSS（Reflected Cross-Site Scripting）攻击是一种常见的网络安全漏洞，属于跨站脚本攻击（XSS）的一种。这种攻击方式涉及到将恶意脚本注入到用户的请求中，然后由服务器动态生成响应页面时反射（即“回显”）这些脚本，最终在用户浏览器上执行。与存储型XSS不同，反射型XSS攻击不会将恶意脚本存储在目标网站上，而是利用用户点击恶意链接、访问带有恶意参数的URL或提交恶意表单数据时发生。
+
+#### 示例
+
+**后端代码（Node.js）：**
+
+```javascript
+router.get('/xss/api/reflected', (req, res) => {
+	// 直接将输入查询反射给页面，没有进行适当的转义
+	const userInput = req.query.input
+	res.json({ message: userInput })
+})
+```
+
+**攻击示例：**
+
+```
+/html/xss/reflected?userInput=<a href="javascript:alert('XSS via Link')">Click me</a>
+/html/xss/reflected?userInput=<div onmouseover="alert('XSS via Hover')">Hover over me</div>
+/html/xss/reflected?userInput=<form action="javascript:alert('XSS via Form Submission')"><input type="submit" value="Submit"/></form>
+/html/xss/reflected?userInput=<img src='invalid-image' onerror='alert(document.cookie);'/>
+/html/xss/reflected?userInput=<script>alert('XSS')</script>
+```
+
+**攻击路径：**
+
+![攻击路径](./images/xss-reflected.png "反射型攻击路径")
+
+#### 真实案例
+
+雅虎邮箱在过去遭遇了几起反射型XSS攻击，这些攻击揭示了安全漏洞的严重性以及对用户造成的潜在风险。在2019年，一位研究者发现了雅虎邮箱中的一个关键XSS漏洞，该漏洞允许攻击者窃取目标用户的电子邮件并将恶意代码附加到其发出的消息中。研究者通过发送含有隐藏JavaScript代码的电子邮件来利用这个漏洞，这些代码在受害者阅读邮件时执行。此外，攻击者还可以利用这个漏洞来静默转发受害者的邮件到外部网站、更改受损雅虎账户的设置，甚至创建电子邮件病毒，附加到所有发出的邮件的签名中「[”](https://www.securityweek.com/researcher-earns-10000-another-xss-flaw-yahoo-mail/)」。
+
+### [基于DOM的XSS](./html/xss/dom.html)
+
+基于DOM的XSS攻击（DOM-based XSS）是一种特殊类型的跨站脚本攻击，它发生在客户端浏览器中，而不涉及到服务器端的数据处理。这种攻击主要利用了网页的DOM（文档对象模型）环境中存在的漏洞，通过修改DOM环境中的数据来插入恶意脚本。与其他类型的XSS攻击相比，基于DOM的XSS攻击完全在客户端执行，不需要服务器处理恶意脚本。DOM型XSS攻击最常见的来源是 URL，通常使用 window.location 对象访问。攻击者可以构建一个链接，发送给受害者，并在查询字符串和 URL 的片段部分中包含有效负载。这段代码利用JavaScript访问和修改DOM，从而执行未经授权的操作。这可能包括窃取cookie、会话劫持、重定向到恶意网站等。
+
+#### 示例
+
+**前端代码：**
+
+```html
+<h1>基于DOM的XSS攻击</h1>
+<div id="message"></div>
+<script src="./dom.js"></script>
+```
+
+```javascript
+// 不安全的代码示例
+document.getElementById('message').innerHTML = decodeURIComponent(location.search.split('msg=')[1]);
+```
+
+**攻击示例：**
+
+```
+http://wanner.vip/html/xss/dom.html?msg=<img src='invalid-image' onerror='alert(document.cookie);'/>
+msg=<a href="javascript:alert('XSS via Link')">Click me</a>
+msg=<div onmouseover="alert('XSS via Hover')">Hover over me</div>
+msg=<form action="javascript:alert('XSS via Form Submission')"><input type="submit" value="Submit"/></form>
+msg=<img src='invalid-image' onerror='alert(document.cookie);'/>
+msg=<script>alert('XSS')</script>
+```
+
+在这个例子中，网页通过JavaScript读取URL中的msg参数，并将其值直接插入到页面的DOM中。如果一个攻击者构造了一个含有恶意JavaScript代码的URL，当这个URL被访问时，恶意代码就会被执行。
+
+**攻击路径：**
+
+![攻击路径](./images/xss-dom.png "DOM型攻击路径")
+
+#### 真实案例
+在2015年末至2016年初，eBay遭遇了一次严重的XSS漏洞。这个漏洞存在于eBay的一个重定向功能中，具体涉及到处理“url”参数的方式。这个参数被用于将用户重定向到平台上的不同页面，但问题在于，这个参数的值没有经过适当的验证。这使得攻击者能够注入恶意代码到页面中。攻击者通过这个漏洞能够实现对eBay卖家账户的完全访问权限，这包括操纵商品列表，以较低的价格销售商品，并窃取支付细节。这个漏洞不仅被用来操纵高价值商品的列表，比如汽车，而且还允许攻击者在未经用户同意的情况下进行交易。eBay最终修复了这个漏洞，但在此之前，攻击者已经利用这个漏洞进行了多次攻击。这个事件突显了即使是大型电商平台也可能面临网络安全威胁，且对于用户输入的验证和清理是防止XSS攻击的关键措施。
+
+### 防御措施
+
+- 对所有用户输入进行验证、过滤和转义。
+- 使用内容安全策略[（CSP）](./CSP.html)来减少XSS攻击的风险。
+- 对于敏感操作，不要仅仅依赖于来自用户的输入。
+- 在服务器端实现适当的输入处理逻辑，确保不信任的数据被安全处理。
+- 使用现代Web框架和库，比如vue，react它们通常提供了自动的XSS防护。
+
+## 跨站请求伪造（CSRF）
+
+CSRF（Cross-Site Request Forgery，跨站请求伪造）攻击是一种常见的网络攻击方式。它允许恶意网站在用户不知情的情况下，以用户的名义向另一个网站发送请求。这种攻击利用了网站对用户的信任，尤其是当用户已经登录目标网站时，攻击者可以进行一些未经授权的操作，如更改密码、转账等。
+
+### 示例
+
+**后端代码：**
+
+```javascript
+// 设置一个简单的登录页面
+router.get('/csrf/login', (req, res) => {
+	res.send(`<form action="/csrf/login" method="post">
+              <input type="text" name="username" placeholder="账号" />
+              <input type="password" name="password" placeholder="密码" />
+              <button type="submit">登录</button>
+            </form>`)
+})
+
+// 登录接口，简化处理，实际开发需要安全验证
+router.post('/csrf/login', (req, res) => {
+	// 设置简单的登录Cookie
+	res.cookie('auth', 'dummy-token')
+	res.send('登录成功')
+})
+
+// 受保护的操作
+router.post('/csrf/action', (req, res) => {
+	const token = req.cookies.auth
+	if (token === 'dummy-token') {
+		res.send('执行成功')
+	} else {
+		res.send('没有通过验证')
+	}
+})
+```
+
+**前端代码：**
+
+攻击者创建一个网页，这个网页包含一个自动提交的表单，目标是受害者网站的转账API。
+
+```html
+<body>
+  <h1>你中奖了!点击按钮领取!</h1>
+  <form action="/csrf/action" method="POST" id="fakeForm">
+    <button type="submit">领取奖品！</button>
+  </form>
+  <script src="./csrf.js"></script>
+</body>
+```
+
+```javascript
+// 自动提交表单
+document.getElementById('fakeForm').submit();
+```
+
+**攻击示例：**
+
+```
+http://wanner.vip/csrf/login // 先登录
+http://wanner.vip:8000/html/csrf.html // 访问
+```
+
+**攻击路径：**
+
+![攻击路径](./images/csrf.png "CSRF攻击路径")
+
+### 攻击原理
+
+1. **受害者登录自己的账户**：并在其他标签页中仍然保持登录状态。
+2. **受害者访问攻击者网站**：不知情的点击一个邮箱链接或被诱导访问了攻击者的网页。
+3. **攻击者网页自动提交请求**：利用受害者的登录态，向受害者网站的API发送请求。
+
+#### 同源策略（SOP）
+
+同源策略是Web安全的基石之一，它阻止了一个源的文档或脚本与另一个源的资源进行交互。这是为了防止恶意文档窃取来自另一个源的数据。在这个上下文中，“源”由协议、域名和端口三部分构成。只有当这三者都匹配时，两个URL才算是"同源"的。
+
+#### 跨站请求的工作方式
+
+CSRF攻击并不直接违反同源策略。相反，攻击利用的是Web应用在用户浏览器中的行为，这些行为在用户未知情的情况下可以跨域发送请求。例如，如果用户已经登录了银行网站，他们的浏览器将保存登录凭证（如cookies）。如果在不登出银行网站的情况下，用户点击了一个恶意链接，这个链接可能会导致浏览器向银行网站发送一个请求，如转账操作。由于请求带有用户的凭证，银行网站可能会执行这个请求。
+
+#### 为什么跨域问题不阻止CSRF攻击
+
+- **浏览器自动携带凭证**：当浏览器向一个网站发送请求时，它会自动附带该网站的cookies（如果有的话）。这意味着，如果用户已经登录了某个网站，即使是从另一个网站发起的请求，只要请求指向那个已登录的网站，浏览器也会携带用户的身份凭证（cookies）。
+- **限制在于响应**：同源策略主要限制从网站A向网站B发送请求后，网站A读取网站B的响应。在CSRF攻击中，攻击者通常不关心响应内容，他们只是想利用用户的浏览器向网站B发起请求。
+
+### 真实案例
+
+有两个著名的CSRF攻击真实案例：
+
+1. TikTok（2020年）：TikTok存在一个漏洞，允许攻击者向用户发送含有恶意软件的消息。一旦恶意软件部署，攻击者可以利用它执行CSRF或跨站脚本（XSS）攻击，导致其他用户账户代表攻击者向TikTok应用提交请求。TikTok在三周内修补了这个漏洞​​。
+
+2. YouTube（2008年）：普林斯顿大学的研究人员在YouTube上发现了一个CSRF漏洞，允许攻击者代表任何用户执行几乎所有操作，包括添加视频到收藏夹、修改朋友/家人列表、向用户联系人发送消息和标记不当内容。这个漏洞被立即修复​​。
+
+### 防御措施
+
+防御CSRF攻击的策略通常包括：
+- **使用CSRF Token**：向用户的会话中添加一个唯一的、不可预测的值（CSRF Token），并要求所有的状态改变请求（如POST请求）都必须携带这个值。由于攻击者无法知道这个Token，他们无法构造一个有效的请求。
+- **验证Referer头**：服务器可以检查HTTP请求的Referer头，以确保请求是从受信任的来源发出的。
+- **利用SameSite Cookie属性**：这个属性可以限制第三方网站使用用户的cookie，根据属性值（Strict、Lax、None），可以阻止一些或所有跨站请求携带cookie。
+
+## 点击劫持
+
+点击劫持（Clickjacking）是一种视觉上的欺骗手段，攻击者通过在一个透明的iframe上覆盖一个看似无害的元素，诱使用户点击该元素，从而在不知情的情况下执行了攻击者想要用户执行的操作。这种攻击方式可以用于盗取用户信息、控制用户的网络会话，或者在用户不知情的情况下操控用户的账号。
+
+### 示例
+
+以下是一个简单的点击劫持案例。
+
+**服务器设置：**
+
+首先，我们设置一个简单的Node.js服务器：
+
+```javascript
+// 引入express
+const express = require('express');
+const app = express();
+const path = require('path');
+
+// 静态文件服务
+app.use(express.static('public'));
+
+// 主页路由
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// 监听3000端口
+app.listen(3000, () => {
+  console.log('Server running on port 3000');
 });
 ```
 
-#### 正例：使用Anti-CSRF Token的表单提交
+在`public`目录下，我们可以创建一个`index.html`文件和一个攻击者的页面`attack.html`。
 
-- **场景**：确保每次用户提交表单时都包含一个从服务器端生成的唯一令牌，从而防止CSRF攻击。
+**真实页面（[index.html](./html/clickjacking/index.html)）**
 
-  **代码示例**：
-  ```html
-  <!-- 表单中嵌入Anti-CSRF Token -->
-  <form action="/action" method="post">
-      <input type="hidden" name="csrf_token" value="{{csrf_token}}">
-      <!-- 其他表单字段 -->
-      <button type="submit">提交</button>
-  </form>
-  ```
+```html
+<!DOCTYPE html>
+<html lang="zh">
 
-#### 反例：未校验CSRF Token的表单提交
+<head>
+  <meta charset="UTF-8">
+  <title>安全页面</title>
+  <style>
+    body {
+      margin: 0;
+    }
+  </style>
+</head>
 
-- **场景**：如果服务器端没有验证表单请求中的CSRF Token，攻击者就可以伪造用户请求。
+<body>
+  <button id="safeButton">安全按钮</button>
+  <script>
+    document.getElementById('safeButton').onclick = function () {
+      alert('您点击了安全按钮！');
+    };
+  </script>
+</body>
 
-  **代码示例**：
-  ```html
-  <!-- 表单提交没有CSRF Token验证 -->
-  <form action="/action" method="post">
-      <!-- 其他表单字段 -->
-      <button type="submit">提交</button>
-  </form>
-  ```
-
-### 实际案例分析
-
-社交网络网站通过图片文件请求处理的漏洞遭受的CSRF攻击突显了这种攻击的隐蔽性和潜在危害。攻击者构造了一个包含恶意操作请求的图片链接，当用户浏览含有此链接的网页或电子邮件时，恶意请求被自动发送，执行了攻击者预设的操作。
-
-这一案例强调了对CSRF攻击防御措施的重要性。通过采用Anti-CSRF Token和双重Cookie验证等策略，可以有效地提升Web应用的安全性，防止未授权操作的发生。开发者需要在设计Web应用时考虑到这些安全措施，从而构建强大的防线对抗CSRF攻击。
-
-## IV. 点击劫持
-
-### 概念与影响
-
-点击劫持是一种视觉诱骗技巧，其中攻击者诱使用户点击一个伪装的网页元素，实际上这个操作触发了隐藏在用户视图下的另一个页面上的动作。通过将目标网站以透明`iframe`的形式嵌入到攻击者控制的页面中，用户的点击行为被劫持，执行了未经授权的命令，如社交媒体操作或账户设置更改。
-
-### 防御策略
-
-#### X-Frame-Options头
-
-`X-Frame-Options` HTTP响应头是防御点击劫持的一种简单有效的方法。它允许网站控制自己的页面是否能被其他页面通过`iframe`、`frame`、`embed`或`object`标签嵌入。
-
-- **配置示例**：
-  - `DENY`：不允许任何页面嵌入。
-  - `SAMEORIGIN`：只允许来自同一源的页面嵌入。
-  - `ALLOW-FROM uri`：只允许指定来源的页面嵌入。
-
-**实践建议**：为了最大限度地防止点击劫持，推荐使用`SAMEORIGIN`值，这样只有来自同一源的页面才能嵌入内容。
-
-#### 内容安全策略（CSP）
-
-CSP提供了一种更强大的控制手段，通过定义哪些资源可以被加载和执行来防止点击劫持等多种攻击。`frame-ancestors`指令允许指定哪些网站可以嵌入当前页面，为点击劫持提供了细粒度的防御。
-
-- **配置示例**：
-  ```http
-  Content-Security-Policy: frame-ancestors 'self' https://trusteddomain.com;
-  ```
-  此配置表示，只有来自相同源和`trusteddomain.com`的页面才能嵌入当前页面。
-
-**实践建议**：结合使用`X-Frame-Options`和CSP的`frame-ancestors`指令，以提供双重防护，确保页面不被未授权的源嵌入。
-
-#### 正例：使用`X-Frame-Options`防止页面被嵌套
-
-- **场景**：通过设置HTTP响应头`X-Frame-Options`为`SAMEORIGIN`，确保页面只能被同源域名的框架嵌套。
-
-  **配置示例**：
-  ```http
-  X-Frame-Options: SAMEORIGIN
-  ```
-
-#### 反例：允许任何来源的页面嵌套当前页面
-
-- **风险**：如果未设置`X-Frame-Options`头，或设置为`ALLOW-FROM`但包含不信任的源，可能会使页面容易受到点击劫持攻击。
-
-  **配置示例**：
-  ```http
-  X-Frame-Options: ALLOW-FROM https://untrusted.example.com
-  ```
-
-### 实际案例分析
-
-Facebook“Like”按钮的点击劫持案例展示了攻击者如何利用透明`iframe`诱导用户进行未意识的互动。通过覆盖伪装的元素，用户实际上点击了嵌入的“Like”按钮，促进了攻击者的内容。
-
-Facebook和其他网站通过部署`X-Frame-Options`和CSP策略来抵御此类攻击，有效限制了页面的非法嵌入。这一案例强调了即使是安全意识较高的大型网站也需警惕点击劫持的风险，并采取措施保护用户免受此类攻击。
-
-## V. 安全HTTP头
-
-### 重要性与作用
-
-安全HTTP头是关键的服务器端响应头，用于加强网站的安全性。它们指导浏览器采取一系列安全措施，比如强制HTTPS连接、防止点击劫持、确保MIME类型的正确解析，以此来保护网站免受各种网络攻击。适当配置这些头部信息对于减少安全漏洞和提升应用安全性至关重要。
-
-### 主要安全头及其配置
-
-#### Strict-Transport-Security (HSTS)
-
-- **详细解释**：HSTS指令强制客户端（如浏览器）使用HTTPS与服务器建立连接，避免SSL剥离攻击，其中攻击者可能尝试将安全的HTTPS连接降级为不安全的HTTP连接。
-
-  **配置示例**：
-  ```
-  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
-  ```
-  这告诉浏览器在接下来的一年内，只通过HTTPS访问当前域及其所有子域。
-
-#### X-Content-Type-Options
-
-- **详细解释**：此响应头阻止浏览器基于实际的MIME类型尝试“嗅探”响应内容，从而忽略响应的`Content-Type`头。这有助于防止基于MIME类型混淆的攻击。
-
-  **配置示例**：
-  ```
-  X-Content-Type-Options: nosniff
-  ```
-
-#### Content-Security-Policy (CSP)
-
-- **详细解释**：CSP允许网站管理者控制页面可以加载哪些资源，是一种有效减少XSS攻击风险的手段。
-
-  **配置示例**：
-  ```
-  Content-Security-Policy: default-src 'self'; script-src 'self' https://apis.example.com; object-src 'none'; report-uri /csp-report-endpoint/
-  ```
-  这个策略允许从当前源加载所有类型的资源，只允许从当前源和`apis.example.com`加载脚本，不允许加载任何`object`，并指定违规报告的URI。
-
-### 配置建议与案例
-
-- **定期更新**：随技术进步和新威胁的出现，应定期审查和更新安全头配置。
-- **扫描工具**：使用如SecurityHeaders.com等在线工具检查网站的安全头配置，确保遵循最佳实践。
-
-#### 案例分析：GitHub的CSP实施
-
-GitHub通过实施CSP减少了XSS攻击的风险，限制了脚本的来源，只允许从自己的域和特定的受信任第三方加载。GitHub还利用CSP报告功能来收集和监控违规报告，有效改进了安全策略。
-
-**实践建议**：
-- 在实施CSP时，从严格策略开始，逐步放宽以找到适用于应用的平衡点。
-- 利用CSP的报告功能收集实际网站使用中的数据，以优化安全策略。
-
-通过这些措施，GitHub显著提高了其平台的安全性。这个案例强调了安全HTTP头在现代Web安全策略中的重要作用，特别是对于广泛存在的XSS攻击。
-
-## VI. 前端加密
-
-### 加密的必要性
-
-在数字化时代，数据加密是确保信息安全不可或缺的技术。它不仅在数据传输过程中防止了监听和篡改，还在数据存储时保护敏感信息免受未授权访问。对于前端开发，加密特别重要，因为它为处理敏感数据（如密码和个人信息）提供了额外的安全层，有助于减少数据泄露风险，增强用户信任。
-
-### 使用场景与技术
-
-前端加密主要适用于如下场景：
-
-- **敏感信息加密**：在敏感信息发送到服务器前进行加密，提高数据安全性。
-- **客户端数据存储**：加密存储在客户端的敏感数据，如使用localStorage或sessionStorage，以防止XSS攻击导致数据泄露。
-- **安全通信**：建立客户端与服务器之间的加密通信通道，确保即使在不安全的网络环境中也能保护数据传输安全。
-
-#### Web Crypto API 使用示例
-
-Web Crypto API是浏览器提供的一个强大接口，支持在客户端执行加密操作，如散列、签名、加密和解密。
-
-- **加密示例**：
-
-```javascript
-async function encryptData(secretData) {
-    const enc = new TextEncoder();
-    const encodedData = enc.encode(secretData);
-
-    const key = await window.crypto.subtle.generateKey(
-        {
-            name: "AES-GCM", // 对称加密算法
-            length: 256, // 密钥长度为256位
-        },
-        true,
-        ["encrypt", "decrypt"]
-    );
-
-    const iv = window.crypto.getRandomValues(new Uint8Array(12)); // 初始化向量（IV）用于AES-GCM模式，以保证即使相同的数据被加密多次，也会产生不同的加密结果，增加安全性
-    const encryptedData = await window.crypto.subtle.encrypt(
-        {
-            name: "AES-GCM",
-            iv: iv,
-        },
-        key,
-        encodedData
-    );
-
-    return { encryptedData, iv, key };
-}
+</html>
 ```
 
-- **解密示例**：
+**攻击页面（[attack.html](./html/clickjacking/attack.html)）**
 
-```javascript
-async function decryptData(encryptedData, iv, key) {
-    const decryptedData = await window.crypto.subtle.decrypt(
-        {
-            name: "AES-GCM",
-            iv: iv,
-        },
-        key,
-        encryptedData
-    );
+```html
+<!DOCTYPE html>
+<html lang="zh">
 
-    const dec = new TextDecoder();
-    return dec.decode(decryptedData);
-}
+<head>
+  <meta charset="UTF-8">
+  <title>攻击页面</title>
+  <style>
+    .box {
+      position: relative;
+    }
+    iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      opacity: 0.0001;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>点击下面的“奖励”按钮领取奖励</h1>
+  <div class="box">
+    <button>奖励</button>
+    <iframe src="index.html" width="200" height="200"></iframe>
+  </div>
+</body>
+
+</html>
 ```
 
-### 安全的传输与存储
+**攻击路径：**
 
-- **传输加密**：始终通过HTTPS协议传输数据，确保数据在传输过程中的安全。
-- **数据存储**：在本地存储加密后的敏感数据，避免以明文形式存储。
+![攻击路径](./images/clickjacking.png "点击劫持攻击路径")
 
-### 实践建议
+### 真实案例
+在2011年，意大利发生了一起著名的点击劫持案例，攻击者利用点击劫持技术劫持Facebook用户的“赞”操作。还有一个案例是2015年，一位加拿大广播公司的记者发现自己不知不觉中为加拿大保守党点了赞。在这种攻击中，攻击者创建一个不可见的iframe或者通过其他方法遮盖真实的“点赞”按钮，并将其与用户看到的另一个元素重叠。当用户认为他们在点击一个无害的按钮或链接时，实际上他们点击的是隐藏的“点赞”按钮，从而在不知情的情况下为某个页面或帖子点赞。危害在于，它可以用来人为地提高某个页面或内容的受欢迎程度，误导其他用户和影响他们的观点。此外，这种攻击还可能用于传播恶意软件，当用户点击被劫持的“点赞”按钮时，他们可能会被重定向到含有恶意软件的网站。
 
-1. **使用HTTPS**：确保所有敏感信息的传输都通过HTTPS进行，以保障数据传输的安全性。
-2. **限制前端敏感数据处理**：避免在不必要的情况下在前端处理敏感信息。如果需要，确保使用加密措施，并对加密数据的访问进行严格控制。
-3. **安全配置Web Crypto API**：正确选择加密算法和密钥长度，避免使用已知弱点的算法。密钥管理应安全，避免在前端公开密钥。
-4. **密钥管理**：密钥不应硬编码在前端代码中，考虑使用服务器端或专用密钥管理服务来生成和存储密钥。
-5. **定期审计**：随着新的安全威胁的出现，定期审计加密策略和实现，确保使用的算法和密钥保持最新和安全。
+### 防护措施
 
-#### 正例：在客户端使用Web Crypto API加密数据
+防护点击劫持攻击的措施分为客户端和服务器端两种：
 
-- **场景**：在敏感数据（如密码或个人信息）被发送到服务器之前，使用Web Crypto API在客户端进行加密。
+#### 客户端防护措施：
 
-  **代码示例**：
-  ```javascript
-  // 使用Web Crypto API加密数据
-  async function encryptSensitiveData(data) {
-      const publicKey = await window.crypto.subtle.importKey(
-          "jwk", // 密钥格式
-          { /* 密钥数据 */ },
-          {   // 算法信息
-              name: "RSA-OAEP",
-              hash: "SHA-256",
-          },
-          false, // 是否可导出
-          ["encrypt"]
-      );
-      const encodedData = new TextEncoder().encode(data);
-      return window.crypto.subtle.encrypt(
-          {
-              name: "RSA-OAEP"
-          },
-          publicKey,
-          encodedData
-      );
-  }
-  ```
+1. **使用支持Intersection Observer API的浏览器**：这个API可以追踪网页上目标元素的“可见性”，帮助检测被隐藏的iframe。
 
-#### 反例：在客户端以明文存储敏感信息
+2. **安装防护插件**：
+   - **NoScript**：这个浏览器插件阻止用户点击不可见或伪装的网页元素。但它仅支持Mozilla Firefox。
+   - **NoClickjack**：这个插件强制网页上的所有iframe都可见，支持Google Chrome、Mozilla Firefox、Opera和Microsoft Edge。
 
-- **风险**：直接在客户端（如localStorage）存储敏感信息（未加密），容易被XSS攻击读取。
+#### 服务器端防护措施：
 
-  **代码示例**：
-  ```javascript
-  // 不安全的敏感信息存储
-  localStorage.setItem('sensitiveData', '明文信息');
-  ```
+1. **设置X-Frame-Options HTTP头**：这个HTTP头部指令可以阻止网页被其他页面通过iframe嵌入，提供了三个选项：DENY（不允许任何域嵌入）、SAMEORIGIN（仅允许同源域嵌入）和ALLOW-FROM（允许特定来源域嵌入）。
 
-通过实施前端加密措施，开发者可以为应用和用户数据提供额外的保护层，从而提高整体的安全性。
+2. **使用Content Security Policy (CSP)的frame-ancestors指令**：这个指令可以限制哪些网页可以嵌入当前页面，有效防止恶意嵌入。
 
-## VII. 其他前端安全考虑
+通过这些措施，网站管理员和用户可以显著提高对点击劫持攻击的防御能力。
 
-在构建现代Web应用时，除了关注常见的安全威胁和防护措施外，还需要考虑一些其他重要的安全方面。这些包括第三方库的安全性、密码的安全处理和存储，以及前端框架的安全实践。
+## 第三方库的安全
 
-### 第三方库的安全
+### 安全风险
 
-- **问题**：第三方库和框架极大地加速了开发过程，但它们也可能引入未知的安全漏洞。一个脆弱的库可以使整个应用受到攻击。
-- **解决方案**：
-  - **及时更新**：定期检查并更新第三方库到最新版本，特别是那些包含安全修复的版本。
-  - **使用可信源**：只从可信的来源下载库和框架，避免使用未经审查的第三方代码。
-  - **安全审计**：利用工具如npm audit或Snyk，定期审计依赖项以发现潜在的安全问题。
-  - **最小权限原则**：尽量减少第三方库的使用，只引入必要的功能，减少潜在的攻击面。
+在当前的网络环境中，第三方库的使用非常普遍。使用第三方库可以大大提高开发效率，但同时也可能带来一些安全风险。
+
+1. **依赖风险**：当你引入一个第三方库时，你不仅仅引入了这个库本身，还引入了它的所有依赖。这些依赖可能存在已知的安全漏洞，或者在未来被发现漏洞。
+
+2. **代码质量**：第三方库的代码质量参差不齐。一些库可能存在编码不规范、存在安全漏洞的问题。如果这些库没有得到良好的维护和更新，那么使用这些库的应用程序也可能受到影响。
+
+3. **供应链攻击**：攻击者可能会入侵第三方库的供应链，注入恶意代码。当应用程序更新或安装了这些被篡改的库时，就可能受到攻击。
+
+4. **权限过度**：有些第三方库可能会请求比其实际需要更多的权限。这可能导致不必要的安全风险，因为库能够访问更多的资源或数据。
+
+### 真实案例
+
+1. **Event-Stream 事件**：这是一个广为人知的 npm 包事件流的安全事件。2018年，攻击者通过接管一个受欢迎的 npm 包event-stream的维护权，并在其中嵌入恶意代码。这个恶意版本被下载数百万次，在未经用户同意的情况下，尝试窃取比特币钱包的资金。这一事件强调了监控和审计第三方依赖的重要性。
+   
+2. **jQuery File Upload插件漏洞**：这是一个在jQuery File Upload插件中发现的漏洞，影响了数以万计的项目。该漏洞允许攻击者上传恶意文件到服务器，可能导致未授权的代码执行。这个问题存在了许多年，直到2018年才被发现并修复。
+
+3. **RubyGems 的 strong_password 漏洞**：2019年，RubyGems 的一个受欢迎的包 strong_password 被发现含有后门。这个后门允许远程代码执行，攻击者可以利用它在使用该gem的系统上执行任意代码。这一事件突显了即使是在受信任的源中，也需要对库进行安全审查。
+
+4. **Bootstrap-Sass Ruby Gem 事件**：在2019年，bootstrap-sass Ruby gem 的一个版本被篡改，其中包含了恶意代码。该代码被设计为在服务器上下载并执行一个远程脚本，这可能导致严重的安全漏洞。这一事件再次证明了即使是广泛使用的库也可能成为攻击的目标。
+
+通过分析这些案例，开发者可以了解到：即使是广泛信赖和使用的第三方库，也可能存在被植入恶意代码的风险。这强调了定期审查和更新第三方依赖的重要性，以及实施自动化安全扫描和监控措施的必要性。
+
+### 防护措施
+
+为了减少使用第三方库带来的安全风险，可以采取以下一些措施：
+
+- **审查和选择**：在选择第三方库时，应该对其进行审查，考虑其维护状况、社区活跃度、已知的安全漏洞等。
+
+- **定期更新**：保持第三方库的更新，以确保及时修补已知的安全漏洞。
+
+- **使用安全工具**：使用一些工具，如Snyk、npm audit等，来检测项目中第三方库的安全漏洞。
+
+- **隔离和限权**：尽量减少第三方库对应用程序其他部分的访问，只给予其完成其功能所必需的最小权限。
+
+- **代码审计**：定期进行代码审计，特别是对那些关键和敏感的部分，确保没有引入不安全的第三方代码。
+
+通过上述措施，可以在享受第三方库带来的便利的同时，最大程度地减少潜在的安全风险。
+
+## 其他前端安全考虑
 
 ### 密码安全与存储
 
@@ -422,9 +469,7 @@ async function decryptData(encryptedData, iv, key) {
 
 通过关注这些额外的安全考虑，前端开发者可以更全面地保护Web应用免受各种威胁。同时，这也需要持续的学习和实践，因为网络安全是一个不断发展的领域，新的威胁和漏洞会不断出现。通过采用最新的安全实践和技术，可以最大限度地减少潜在的安全风险。
 
-## VIII. 安全工具与资源
-
-为了帮助前端开发人员识别和修复安全漏洞，提升代码的安全性，有许多工具和资源可供参考和使用。以下是一些关键的安全工具和资源，它们可以成为开发人员保障前端安全的有力帮手。
+## 安全工具与资源
 
 ### 安全扫描工具
 
@@ -435,15 +480,8 @@ async function decryptData(encryptedData, iv, key) {
 
 ### 安全编码指南
 
-- **OWASP Top 10 for Web**：OWASP发布的Web应用安全风险排行榜，为开发人员提供了关于最常见和最危险的Web应用安全威胁的指南。
+- **OWASP Top 10 for Web**：OWASP发布的Web应用安全风险排行榜，为开发人员提供了关于最常见和最危险的Web应用安全威胁的指南。[owasp](https://owasp.org/Top10/zh_CN/)
 - **Mozilla Developer Network (MDN) Web Docs**：提供了关于Web安全的深入指南和最佳实践，包括如何使用HTTPS、内容安全政策（CSP）等。
-
-### 学习资源与社区
-
-- **OWASP**（开放式Web应用安全项目）：提供了广泛的文档、工具、视频和论坛，覆盖Web安全的各个方面。
-- **Coursera 和 edX**：这些在线学习平台提供了关于网络安全和信息安全的课程，包括一些专门针对前端开发人员的课程。
-- **GitHub**：作为开源项目的聚集地，GitHub拥有大量安全相关的项目和库，提供实用的代码示例和实现指导。
-- **安全博客和播客**：关注一些知名的安全专家和组织的博客或播客，如Troy Hunt的博客，可以及时了解最新的安全动态和威胁情报。
 
 ### 如何最大化这些资源的价值
 
@@ -453,20 +491,11 @@ async function decryptData(encryptedData, iv, key) {
 
 通过利用这些工具和资源，前端开发人员可以提高自己在安全方面的知识和技能，更有效地保护自己的应用不受安全威胁的侵害。持续学习和应用最新的安全实践是确保前端安全的关键。
 
-## IX. 结论
+## 结论
 
 ### 安全是一个持续的过程
 
 在快速发展的数字时代，网络安全面临的威胁和挑战也在不断演变。新的攻击手段和安全漏洞不断被发现，这要求安全措施必须持续更新和改进。安全不是一个一次性的任务，而是一个需要持续投入和关注的过程。这包括定期更新和审计代码、使用最新的安全工具和技术、以及持续的安全培训和教育。
-
-### 前端工程师的责任与行动
-
-作为前端工程师，有责任确保自己开发的应用尽可能安全，保护用户免受网络攻击的影响。这需要开发者：
-
-- **持续学习和关注安全动态**：安全是一个广泛且不断变化的领域。开发者需要通过阅读最新的安全研究、参加相关的会议和研讨会、以及关注安全社区的动态，来不断提高自己的安全知识和技能。
-- **应用最佳安全实践**：在日常开发中遵循已建立的安全指南和最佳实践，如OWASP Top 10、使用安全的编码模式，以及定期使用安全工具审计代码。
-- **主动参与安全测试和评估**：与安全团队合作，参与应用的安全测试和评估过程，主动寻找并修复潜在的安全漏洞。
-- **倡导安全文化**：在团队和组织内部倡导安全意识，确保安全成为开发过程中的一个重要考虑因素。
 
 ### 结语
 
